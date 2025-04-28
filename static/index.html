@@ -1,0 +1,131 @@
+<!-- ====== index.html (อัปเดตใหม่ แยก BW ออกต่างหาก) ====== -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bee Stress Monitoring</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .chart-container {
+      width: 90%;
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<h1>🐝 Bee Stress Monitoring Dashboard 🐝</h1>
+
+<div class="chart-container">
+  <canvas id="featureChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <canvas id="bwChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <canvas id="stressChart"></canvas>
+</div>
+
+<script>
+const featureCtx = document.getElementById('featureChart').getContext('2d');
+const stressCtx = document.getElementById('stressChart').getContext('2d');
+const bwCtx = document.getElementById('bwChart').getContext('2d');
+
+const featureChart = new Chart(featureCtx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            { label: 'SC', data: [], borderColor: 'green', fill: false },
+            { label: 'Fre', data: [], borderColor: 'orange', fill: false }
+        ]
+    },
+    options: {
+        scales: { x: { display: true }, y: { beginAtZero: true } }
+    }
+});
+
+const bwChart = new Chart(bwCtx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            { label: 'BW', data: [], borderColor: 'blue', fill: false }
+        ]
+    },
+    options: {
+        scales: { x: { display: true }, y: { beginAtZero: true } }
+    }
+});
+
+const stressChart = new Chart(stressCtx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            { label: 'Stress Level', data: [], borderColor: 'red', fill: false }
+        ]
+    },
+    options: {
+        scales: { x: { display: true }, y: { min: 0, max: 1 } }
+    }
+});
+
+async function fetchData() {
+    const response = await fetch('/realtime_data');
+    const data = await response.json();
+
+    const now = new Date().toLocaleTimeString();
+
+    featureChart.data.labels.push(now);
+    featureChart.data.datasets[0].data.push(data.sc);
+    featureChart.data.datasets[1].data.push(data.fre);
+
+    bwChart.data.labels.push(now);
+    bwChart.data.datasets[0].data.push(data.bw);
+
+    stressChart.data.labels.push(now);
+    stressChart.data.datasets[0].data.push(data.stress_level);
+
+    if (featureChart.data.labels.length > 20) {
+        featureChart.data.labels.shift();
+        featureChart.data.datasets.forEach(ds => ds.data.shift());
+    }
+    if (bwChart.data.labels.length > 20) {
+        bwChart.data.labels.shift();
+        bwChart.data.datasets.forEach(ds => ds.data.shift());
+    }
+    if (stressChart.data.labels.length > 20) {
+        stressChart.data.labels.shift();
+        stressChart.data.datasets[0].data.shift();
+    }
+
+    featureChart.update();
+    bwChart.update();
+    stressChart.update();
+}
+
+setInterval(fetchData, 1000);
+</script>
+
+</body>
+</html>
